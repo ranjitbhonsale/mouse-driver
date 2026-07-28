@@ -188,12 +188,18 @@ body, html {
 }
 
 .btn-sm {
-  padding: 4px 10px;
+  padding: 5px 10px;
   font-size: 11px;
 }
 
 .btn-full {
   width: 100%;
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
 
 /* Viewport Container */
@@ -264,7 +270,7 @@ body, html {
 .left-panel {
   top: 14px;
   left: 14px;
-  width: 280px;
+  width: 290px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -300,7 +306,7 @@ body, html {
   color: var(--accent-cyan);
 }
 
-/* Unit Selector */
+/* Unit & Mode Selectors */
 .btn-group {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -477,7 +483,7 @@ input[type="color"]::-webkit-color-swatch {
 .scale-indicator {
   position: absolute;
   bottom: 20px;
-  left: 310px;
+  left: 320px;
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
   backdrop-filter: var(--panel-backdrop);

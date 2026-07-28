@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Room-Scale Continuous Mouse Driver & Visualizer</title>
+  <title>Room-Scale Continuous Mouse Driver & Floor Plan Creator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -22,8 +22,8 @@
         </svg>
       </div>
       <div class="brand-text">
-        <span class="app-title">ROOPSCALE MOUSE DRIVER</span>
-        <span class="app-subtitle">Continuous Real-Dimension Motion Tracker</span>
+        <span class="app-title">ROOMSCALE MOUSE DRIVER &amp; FLOOR PLANNER</span>
+        <span class="app-subtitle">Continuous Motion &amp; Corner-Click CAD Digitizer</span>
       </div>
     </div>
 
@@ -38,12 +38,12 @@
         <span class="telem-val" id="val-y">0.00 ft</span>
       </div>
       <div class="telem-item">
-        <span class="telem-label">TOTAL DISTANCE</span>
-        <span class="telem-val accent" id="val-distance">0.00 ft</span>
+        <span class="telem-label">ROOM AREA</span>
+        <span class="telem-val accent" id="val-area">0.00 sq ft</span>
       </div>
       <div class="telem-item">
-        <span class="telem-label">CURRENT SPEED</span>
-        <span class="telem-val" id="val-speed">0.00 ft/s</span>
+        <span class="telem-label">TOTAL DISTANCE</span>
+        <span class="telem-val" id="val-distance">0.00 ft</span>
       </div>
       <div class="telem-item">
         <span class="telem-label">SENSOR DPI</span>
@@ -68,13 +68,55 @@
     <!-- Overlay HUD: Status Banner -->
     <div class="status-banner" id="status-banner">
       <div class="status-indicator inactive" id="status-indicator"></div>
-      <span id="status-text">Click "Start Continuous Tracking" to lock mouse and move freely without screen edge limits. Press [Esc] to pause.</span>
+      <span id="status-text">Click "Start Continuous Tracking" to lock mouse and move freely. Press [Space] or [Click] to mark a room corner!</span>
     </div>
 
     <!-- Floating Tool Panel (Left) -->
     <div class="floating-panel left-panel">
+      <!-- Mode Tabs -->
       <div class="panel-section">
-        <span class="section-title">UNITS & DISPLAY</span>
+        <span class="section-title">TRACKING MODE</span>
+        <div class="btn-group mode-group">
+          <button class="btn-toggle active" id="mode-floorplan" data-mode="floorplan">🏠 Floor Plan (Corners)</button>
+          <button class="btn-toggle" id="mode-freehand" data-mode="freehand">✏️ Freehand Path</button>
+        </div>
+      </div>
+
+      <!-- Floor Plan Tools (Active when Floor Plan Mode) -->
+      <div class="panel-section" id="section-floorplan-tools">
+        <span class="section-title">FLOOR PLAN DIGITIZER</span>
+        <div class="tool-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="check-ortho" checked>
+            <span class="switch-slider"></span>
+            <span class="toggle-label">90° Ortho-Lock (Right Angles)</span>
+          </label>
+        </div>
+        <div class="tool-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="check-show-dims" checked>
+            <span class="switch-slider"></span>
+            <span class="toggle-label">Show Wall Dimensions</span>
+          </label>
+        </div>
+        <div class="tool-row">
+          <span class="row-label">Wall Thickness</span>
+          <select id="select-wall-thick" class="select-input">
+            <option value="4">4 inches (Interior)</option>
+            <option value="6" selected>6 inches (Exterior Standard)</option>
+            <option value="8">8 inches (Heavy Wall)</option>
+          </select>
+        </div>
+        <div class="btn-grid mt-2">
+          <button id="btn-add-corner" class="btn btn-secondary btn-sm">📍 Add Corner (Click/Space)</button>
+          <button id="btn-close-room" class="btn btn-success btn-sm">🔒 Close Room</button>
+        </div>
+        <button id="btn-undo-corner" class="btn btn-secondary btn-sm mt-1">↩️ Undo Last Corner</button>
+      </div>
+
+      <!-- Unit Selector -->
+      <div class="panel-section">
+        <span class="section-title">UNITS &amp; DISPLAY</span>
         <div class="btn-group unit-group">
           <button class="btn-toggle active" data-unit="ft">Feet (ft)</button>
           <button class="btn-toggle" data-unit="in">Inches (in)</button>
@@ -83,6 +125,7 @@
         </div>
       </div>
 
+      <!-- Mouse DPI -->
       <div class="panel-section">
         <span class="section-title">MOUSE SENSOR DPI</span>
         <div class="dpi-controls">
@@ -94,13 +137,14 @@
         </div>
       </div>
 
-      <div class="panel-section">
-        <span class="section-title">DRAWING & PATH</span>
+      <!-- Freehand Settings -->
+      <div class="panel-section" id="section-freehand-tools" style="display:none;">
+        <span class="section-title">FREEHAND DRAWING</span>
         <div class="tool-row">
           <label class="toggle-switch">
             <input type="checkbox" id="check-draw" checked>
             <span class="switch-slider"></span>
-            <span class="toggle-label">Draw Path</span>
+            <span class="toggle-label">Draw Continuous Line</span>
           </label>
         </div>
         <div class="tool-row color-row">
@@ -111,7 +155,6 @@
             <button class="color-swatch" style="background:#7c4dff;" data-color="#7c4dff"></button>
             <button class="color-swatch" style="background:#00e676;" data-color="#00e676"></button>
             <button class="color-swatch" style="background:#ff9100;" data-color="#ff9100"></button>
-            <button class="color-swatch" style="background:#ff1744;" data-color="#ff1744"></button>
           </div>
         </div>
         <div class="tool-row">
@@ -121,8 +164,9 @@
         </div>
       </div>
 
+      <!-- Grid Settings -->
       <div class="panel-section">
-        <span class="section-title">GRID & SNAP</span>
+        <span class="section-title">GRID &amp; DISPLAY</span>
         <div class="tool-row">
           <label class="toggle-switch">
             <input type="checkbox" id="check-grid" checked>
@@ -144,7 +188,7 @@
 
       <div class="panel-section actions-section">
         <button id="btn-reset-pos" class="btn btn-secondary btn-full">Reset Position (0,0)</button>
-        <button id="btn-clear-canvas" class="btn btn-danger btn-full">Clear Path</button>
+        <button id="btn-clear-canvas" class="btn btn-danger btn-full">Clear All Floor Plans</button>
       </div>
     </div>
 
@@ -165,7 +209,7 @@
           <path d="M12 8v8M8 12h8"></path>
         </svg>
       </button>
-      <button id="btn-export" class="btn-icon" title="Export Session (PNG / JSON)">
+      <button id="btn-export" class="btn-icon" title="Export Floor Plan (PNG / SVG / CAD JSON)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
         </svg>
@@ -182,7 +226,7 @@
       </div>
       <div class="modal-body">
         <p class="modal-desc">
-          To ensure 1:1 real-world physical accuracy (e.g. 5 feet mouse drag = exactly 5 feet on screen), calibrate your mouse optical sensor DPI using a standard ruler:
+          To ensure 1:1 physical floor plan accuracy (e.g. 5 feet mouse drag = 5 feet wall on screen), calibrate your mouse optical sensor DPI using a standard ruler:
         </p>
 
         <div class="wizard-steps">
@@ -201,7 +245,7 @@
             <span class="step-num">2</span>
             <div class="step-content">
               <strong>Perform Physical Movement</strong>
-              <p>Place mouse at edge of your ruler. Click "Start Test", drag mouse straight along ruler for the exact chosen distance, then click "Complete Test".</p>
+              <p>Place mouse at edge of your ruler. Click "Start Test", drag mouse straight along ruler for chosen distance, then click "Complete Test".</p>
               <div class="calib-live-counter">
                 Accumulated Ticks: <span id="calib-ticks" class="highlight-code">0</span>
               </div>
@@ -228,20 +272,20 @@
   <div class="modal-overlay" id="modal-export">
     <div class="modal-card">
       <div class="modal-header">
-        <div class="modal-title">Export Room-Scale Drawing</div>
+        <div class="modal-title">Export Floor Plan Blueprint</div>
         <button class="modal-close" id="modal-export-close-btn">&times;</button>
       </div>
       <div class="modal-body">
-        <p>Save your physical room-scale vector drawing and trajectory data:</p>
+        <p>Save your room floor plan blueprint with wall dimensions and area calculations:</p>
         <div class="export-options">
           <button id="btn-export-png" class="btn btn-secondary btn-full">
-            <span>📷 Download High-Res Image (PNG with Grid & Scale)</span>
-          </button>
-          <button id="btn-export-json" class="btn btn-secondary btn-full">
-            <span>📄 Download Raw Trajectory Coordinates (JSON)</span>
+            <span>📷 Download Blueprint Image (PNG with Grid &amp; Dimensions)</span>
           </button>
           <button id="btn-export-svg" class="btn btn-secondary btn-full">
-            <span>📐 Download Vector Drawing (SVG)</span>
+            <span>📐 Download Vector CAD File (SVG)</span>
+          </button>
+          <button id="btn-export-json" class="btn btn-secondary btn-full">
+            <span>📄 Download Floor Plan Trajectory &amp; Corner JSON</span>
           </button>
         </div>
       </div>
