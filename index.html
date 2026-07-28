@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Room-Scale Continuous Mouse Driver & Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Bar Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="2" width="20" height="20" rx="5"></rect>
+          <path d="M12 6v12M6 12h12"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="app-title">ROOPSCALE MOUSE DRIVER</span>
+        <span class="app-subtitle">Continuous Real-Dimension Motion Tracker</span>
+      </div>
+    </div>
+
+    <!-- Telemetry Bar -->
+    <div class="telemetry-bar">
+      <div class="telem-item">
+        <span class="telem-label">X POSITION</span>
+        <span class="telem-val" id="val-x">0.00 ft</span>
+      </div>
+      <div class="telem-item">
+        <span class="telem-label">Y POSITION</span>
+        <span class="telem-val" id="val-y">0.00 ft</span>
+      </div>
+      <div class="telem-item">
+        <span class="telem-label">TOTAL DISTANCE</span>
+        <span class="telem-val accent" id="val-distance">0.00 ft</span>
+      </div>
+      <div class="telem-item">
+        <span class="telem-label">CURRENT SPEED</span>
+        <span class="telem-val" id="val-speed">0.00 ft/s</span>
+      </div>
+      <div class="telem-item">
+        <span class="telem-label">SENSOR DPI</span>
+        <span class="telem-val highlight" id="val-dpi">800 DPI</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="btn-lock" class="btn btn-primary pulse-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a4 4 0 0 0-4 4v4H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4zm-2 4a2 2 0 1 1 4 0v4h-4V6z"></path>
+        </svg>
+        <span>START CONTINUOUS TRACKING</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport Area -->
+  <main class="viewport-container" id="viewport-container">
+    <canvas id="main-canvas"></canvas>
+
+    <!-- Overlay HUD: Status Banner -->
+    <div class="status-banner" id="status-banner">
+      <div class="status-indicator inactive" id="status-indicator"></div>
+      <span id="status-text">Click "Start Continuous Tracking" to lock mouse and move freely without screen edge limits. Press [Esc] to pause.</span>
+    </div>
+
+    <!-- Floating Tool Panel (Left) -->
+    <div class="floating-panel left-panel">
+      <div class="panel-section">
+        <span class="section-title">UNITS & DISPLAY</span>
+        <div class="btn-group unit-group">
+          <button class="btn-toggle active" data-unit="ft">Feet (ft)</button>
+          <button class="btn-toggle" data-unit="in">Inches (in)</button>
+          <button class="btn-toggle" data-unit="m">Meters (m)</button>
+          <button class="btn-toggle" data-unit="yd">Yards (yd)</button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <span class="section-title">MOUSE SENSOR DPI</span>
+        <div class="dpi-controls">
+          <input type="range" id="slider-dpi" min="200" max="6400" step="50" value="800">
+          <div class="dpi-input-row">
+            <input type="number" id="input-dpi" value="800" min="50" max="25600">
+            <button id="btn-calibrate" class="btn btn-secondary btn-sm">Calibrate DPI</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <span class="section-title">DRAWING & PATH</span>
+        <div class="tool-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="check-draw" checked>
+            <span class="switch-slider"></span>
+            <span class="toggle-label">Draw Path</span>
+          </label>
+        </div>
+        <div class="tool-row color-row">
+          <span class="row-label">Line Color</span>
+          <div class="color-picker-group">
+            <input type="color" id="picker-color" value="#00e5ff">
+            <button class="color-swatch" style="background:#00e5ff;" data-color="#00e5ff"></button>
+            <button class="color-swatch" style="background:#7c4dff;" data-color="#7c4dff"></button>
+            <button class="color-swatch" style="background:#00e676;" data-color="#00e676"></button>
+            <button class="color-swatch" style="background:#ff9100;" data-color="#ff9100"></button>
+            <button class="color-swatch" style="background:#ff1744;" data-color="#ff1744"></button>
+          </div>
+        </div>
+        <div class="tool-row">
+          <span class="row-label">Line Width (in)</span>
+          <input type="range" id="slider-width" min="0.1" max="3.0" step="0.1" value="0.5">
+          <span id="val-width" class="slider-val">0.5"</span>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <span class="section-title">GRID & SNAP</span>
+        <div class="tool-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="check-grid" checked>
+            <span class="switch-slider"></span>
+            <span class="toggle-label">Show Real Grid</span>
+          </label>
+        </div>
+        <div class="tool-row">
+          <span class="row-label">Grid Spacing</span>
+          <select id="select-grid-size" class="select-input">
+            <option value="auto">Auto Adaptive</option>
+            <option value="1">1 ft / 0.3 m</option>
+            <option value="5" selected>5 ft / 1.5 m</option>
+            <option value="10">10 ft / 3.0 m</option>
+            <option value="20">20 ft / 6.0 m</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel-section actions-section">
+        <button id="btn-reset-pos" class="btn btn-secondary btn-full">Reset Position (0,0)</button>
+        <button id="btn-clear-canvas" class="btn btn-danger btn-full">Clear Path</button>
+      </div>
+    </div>
+
+    <!-- Scale Indicator (Bottom Left) -->
+    <div class="scale-indicator" id="scale-indicator">
+      <div class="scale-bar" id="scale-bar"></div>
+      <span class="scale-text" id="scale-text">1 ft</span>
+    </div>
+
+    <!-- Floating Zoom / View Controls (Bottom Right) -->
+    <div class="floating-panel view-controls">
+      <button id="btn-zoom-in" class="btn-icon" title="Zoom In">+</button>
+      <button id="btn-zoom-reset" class="btn-icon text-btn" title="Reset View">100%</button>
+      <button id="btn-zoom-out" class="btn-icon" title="Zoom Out">−</button>
+      <button id="btn-center" class="btn-icon" title="Center Origin">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 8v8M8 12h8"></path>
+        </svg>
+      </button>
+      <button id="btn-export" class="btn-icon" title="Export Session (PNG / JSON)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
+        </svg>
+      </button>
+    </div>
+  </main>
+
+  <!-- Calibration Modal -->
+  <div class="modal-overlay" id="modal-calibration">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">DPI Calibration Wizard</div>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          To ensure 1:1 real-world physical accuracy (e.g. 5 feet mouse drag = exactly 5 feet on screen), calibrate your mouse optical sensor DPI using a standard ruler:
+        </p>
+
+        <div class="wizard-steps">
+          <div class="step-card">
+            <span class="step-num">1</span>
+            <div class="step-content">
+              <strong>Select Calibration Distance</strong>
+              <div class="dist-options">
+                <label><input type="radio" name="calib-dist" value="6" checked> 6 inches (15.24 cm)</label>
+                <label><input type="radio" name="calib-dist" value="12"> 12 inches (30.48 cm / 1 ft)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-num">2</span>
+            <div class="step-content">
+              <strong>Perform Physical Movement</strong>
+              <p>Place mouse at edge of your ruler. Click "Start Test", drag mouse straight along ruler for the exact chosen distance, then click "Complete Test".</p>
+              <div class="calib-live-counter">
+                Accumulated Ticks: <span id="calib-ticks" class="highlight-code">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="calib-result" id="calib-result" style="display:none;">
+          <div class="result-box">
+            <span class="result-label">Calculated Hardware DPI:</span>
+            <span class="result-val" id="calib-calculated-dpi">800 DPI</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-calib-start" class="btn btn-primary">Start Test</button>
+        <button id="btn-calib-apply" class="btn btn-success" style="display:none;">Apply Calculated DPI</button>
+        <button id="btn-calib-cancel" class="btn btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div class="modal-overlay" id="modal-export">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Export Room-Scale Drawing</div>
+        <button class="modal-close" id="modal-export-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Save your physical room-scale vector drawing and trajectory data:</p>
+        <div class="export-options">
+          <button id="btn-export-png" class="btn btn-secondary btn-full">
+            <span>📷 Download High-Res Image (PNG with Grid & Scale)</span>
+          </button>
+          <button id="btn-export-json" class="btn btn-secondary btn-full">
+            <span>📄 Download Raw Trajectory Coordinates (JSON)</span>
+          </button>
+          <button id="btn-export-svg" class="btn btn-secondary btn-full">
+            <span>📐 Download Vector Drawing (SVG)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
